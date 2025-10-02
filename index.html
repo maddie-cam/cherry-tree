@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <title>Cherry Tree - Side Scroller</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+:root {
+  --bg-sky: #d9f1ff;
+  --bg-sky-deep: #bde2ff;
+  --text: #0e1222;
+  --muted: #5c6a7a;
+  --accent: #ff5fa2;
+  --danger: #b33b2e;
+  --grass: #5fd362;
+  --card: #ffffffcc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  color: var(--text);
+  background: linear-gradient(180deg, var(--bg-sky) 0%, var(--bg-sky-deep) 100%);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 16px;
+}
+
+/* Start screen */
+#start-screen {
+  width: min(960px, 100%);
+  display: grid;
+  gap: 20px;
+  justify-items: center;
+}
+
+.hero h1 {
+  margin: 0 0 6px 0;
+  font-size: clamp(28px, 5vw, 48px);
+}
+
+.tagline {
+  margin: 0;
+  color: var(--muted);
+}
+
+.character-select {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.character-card {
+  appearance: none;
+  border: 2px solid transparent;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 16px;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+}
+
+.character-card:hover {
+  transform: translateY(-2px);
+}
+
+.character-card[aria-pressed="true"],
+.character-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px rgba(255,95,162,0.25);
+}
+
+.character-card .avatar {
+  width: 140px;
+  height: 140px;
+}
+
+.character-card svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.character-card .label {
+  font-weight: 600;
+}
+
+.start-button {
+  appearance: none;
+  border: none;
+  background: var(--accent);
+  color: white;
+  border-radius: 999px;
+  padding: 14px 24px;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(255,95,162,0.35);
+}
+
+.start-button[disabled] {
+  opacity: 0.6;
+  filter: grayscale(0.35);
+  cursor: not-allowed;
+}
+
+.help {
+  display: grid;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+}
+
+.help .kbd {
+  padding: 2px 6px;
+  border: 1px solid #ccd6e0;
+  border-radius: 6px;
+  background: white;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.help .divider {
+  width: 1px;
+  height: 18px;
+  background: #c9d2dc;
+}
+
+/* Game screen */
+#game-screen {
+  width: min(720px, 100%);
+  position: relative;
+  aspect-ratio: 2 / 3; /* match 480x720 game canvas */
+}
+
+#game-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+  background: #aee3ff; /* Fallback sky before draw */
+}
+
+#hud {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  text-shadow: 0 2px 0 rgba(255,255,255,0.6);
+}
+
+/* Character selection overlay on top of canvas */
+#char-select-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding-top: 40px;
+  pointer-events: auto;
+}
+
+.pixel-title {
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-shadow: 0 2px 0 #000, 2px 0 0 #000, -2px 0 0 #000, 0 -2px 0 #000;
+  margin-bottom: 20px;
+}
+
+.char-boxes {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 16px;
+}
+
+.char-box {
+  appearance: none;
+  border: 2px solid #c4d0df;
+  background: #ffffffcc;
+  border-radius: 12px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  cursor: pointer;
+}
+
+.char-box[aria-pressed="true"], .char-box.selected {
+  border-color: #3dd176;
+  box-shadow: 0 0 0 3px #3dd17644;
+}
+
+.char-box canvas { image-rendering: pixelated; }
+.pixel-start {
+  margin-top: 16px;
+  appearance: none;
+  border: 2px solid #2ea862;
+  background: #3dd176;
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  letter-spacing: 1px;
+  cursor: pointer;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.3);
+}
+
+/* Retro HUD font */
+#hud .score, #hud .lives {
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  color: #ffffff;
+  text-shadow: 0 2px 0 #000, 2px 0 0 #000, -2px 0 0 #000, 0 -2px 0 #000;
+}
+
+#game-over {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,0.35);
+}
+
+#game-over .dialog {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  width: min(360px, 90%);
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+#game-over .actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+#game-over button {
+  appearance: none;
+  border: none;
+  background: var(--accent);
+  color: white;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#game-over button#menu-button {
+  background: #6b7b8c;
+}
+
+@media (max-width: 520px) {
+  .character-select {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Ensure hidden attribute actually hides overlays/sections */
+#start-screen[hidden],
+#game-screen[hidden],
+#game-over[hidden],
+#char-select-overlay[hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <section id="game-screen" aria-label="Game canvas">
+        <canvas id="game-canvas" width="480" height="720"></canvas>
+        <div id="char-select-overlay">
+          <div class="pixel-title">CHOOSE A CHARACTER</div>
+          <div class="char-boxes" role="group" aria-label="Choose your character">
+            <button class="char-box" id="select-girl" type="button" aria-pressed="false">
+              <canvas id="girl-preview" width="100" height="150"></canvas>
+            </button>
+            <button class="char-box" id="select-boy" type="button" aria-pressed="false">
+              <canvas id="boy-preview" width="100" height="150"></canvas>
+            </button>
+          </div>
+          <button id="start-game-btn" class="pixel-start" type="button" hidden>START</button>
+        </div>
+        <div id="hud" aria-live="polite" hidden>
+          <div class="score" id="score">Score: 0</div>
+          <div class="lives" id="lives" aria-label="Lives">❤️❤️❤️</div>
+        </div>
+
+        <div id="game-over" hidden>
+          <div class="dialog">
+            <h2>Game Over</h2>
+            <p id="final-score">Score: 0</p>
+            <div class="actions">
+              <button id="restart-button" type="button">Restart</button>
+              <button id="menu-button" type="button">Main Menu</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script defer src="./game.js"></script>
+  </body>
+  </html>
+
+
