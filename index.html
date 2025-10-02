@@ -151,14 +151,17 @@ body {
 
 /* Game screen */
 #game-screen {
-  width: min(720px, 100%);
-  position: relative;
+  width: auto;
+  height: 100dvh; /* fill visible viewport height */
+  max-width: 100%;
   aspect-ratio: 2 / 3; /* match 480x720 game canvas */
+  margin: 0 auto; /* center horizontally */
+  position: relative;
 }
 
 #game-canvas {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
   border-radius: 16px;
   box-shadow: 0 8px 30px rgba(0,0,0,0.18);

@@ -231,24 +231,25 @@
   const MAX_BRANCHES = 4;
 
   function resizeCanvasToFit() {
-    // Keep 2:3-ish portrait ratio, fit width
+    // Container is sized to 100dvh with aspect-ratio 2/3; use its box to set canvas pixels
     const container = gameScreen;
     const cssWidth = container.clientWidth;
-    const ratio = baseHeight / baseWidth; // 1.5
-    const cssHeight = cssWidth * ratio;
-    canvas.width = Math.round(cssWidth * devicePixelRatio);
-    canvas.height = Math.round(cssHeight * devicePixelRatio);
+    const cssHeight = container.clientHeight;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(cssWidth * dpr);
+    canvas.height = Math.round(cssHeight * dpr);
     canvas.style.width = cssWidth + 'px';
     canvas.style.height = cssHeight + 'px';
-    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
   window.addEventListener('resize', () => {
     resizeCanvasToFit();
     if (gameState === 'menu') {
       drawBackground(ctx, performance.now());
+      sizePreviews();
+      renderPreviews();
     }
-    if (typeof renderPreviews === 'function') renderPreviews();
   });
 
   // Player
@@ -325,8 +326,9 @@
 
   // Drawing helpers
   function drawBackground(ctx, t) {
-    const w = canvas.width / devicePixelRatio;
-    const h = canvas.height / devicePixelRatio;
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.width / dpr;
+    const h = canvas.height / dpr;
     // If external background is present, draw it scaled to cover
     if (backgroundImageReady && backgroundImage) {
       const iw = backgroundImage.width;
@@ -708,8 +710,9 @@
   }
 
   function render(timestamp) {
-    const w = canvas.width / devicePixelRatio;
-    const h = canvas.height / devicePixelRatio;
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.width / dpr;
+    const h = canvas.height / dpr;
     drawBackground(ctx, timestamp);
 
     // Entities
@@ -721,7 +724,7 @@
       const sprW = blossomSprite.width || 8;
       const sprH = blossomSprite.height || 8;
       const desiredW = (b.r * 2) * (w / baseWidth);
-      const scale = Math.max(1, Math.round(desiredW / sprW));
+      const scale = Math.max(0.5, desiredW / sprW); // fractional scaling for smoother size changes
       const dw = sprW * scale;
       const dh = sprH * scale;
       ctx.drawImage(blossomSprite, Math.round(sx - dw / 2), Math.round(sy - dh / 2), dw, dh);
@@ -734,7 +737,7 @@
       const sprW = branchSprite.width || 16;
       const sprH = branchSprite.height || 4;
       const desiredW = (br.w / baseWidth) * w;
-      const scale = Math.max(1, Math.round(desiredW / sprW));
+      const scale = Math.max(0.5, desiredW / sprW);
       const bw = sprW * scale;
       const bh = sprH * scale;
       ctx.drawImage(branchSprite, Math.round(x), Math.round(y), bw, bh);
@@ -749,8 +752,9 @@
     // Render external sprites at 100x150 base pixels, integer scaled for crisp pixels
     const sprW = (selectedCharacter === 'girl' ? girlSprite : boySprite).width || 100;
     const sprH = (selectedCharacter === 'girl' ? girlSprite : boySprite).height || 150;
-    const targetLogicalWidth = 80 / baseWidth * w; // increase on-screen size a bit
-    const scale = Math.max(1, Math.round(targetLogicalWidth / sprW));
+    // Make the player occupy ~16% of the game width (fraction scales with window)
+    const targetLogicalWidth = w * 0.16;
+    const scale = Math.max(0.5, targetLogicalWidth / sprW);
     const pw = sprW * scale;
     const ph = sprH * scale;
     const spriteCanvas = selectedCharacter === 'girl' ? girlSprite : boySprite;
@@ -839,6 +843,18 @@
     }
   }
 
+  // Size selection preview canvases to scale with screen (keep 1:1.5 ratio)
+  function sizePreviews() {
+    if (!girlPreview || !boyPreview) return;
+    const ph = Math.max(80, Math.floor(gameScreen.clientHeight * 0.25)); // 25% of height
+    const pw = Math.floor(ph * (2/3)); // maintain 100x150 ratio
+    [girlPreview, boyPreview].forEach(cv => {
+      cv.width = pw; cv.height = ph;
+      cv.style.width = pw + 'px';
+      cv.style.height = ph + 'px';
+    });
+  }
+
   // Initial menu state
   (function initMenu() {
     if (charOverlay) charOverlay.hidden = false;
@@ -847,6 +863,7 @@
     resizeCanvasToFit();
     // Draw the background immediately (will show image if loaded; otherwise gradient until load)
     drawBackground(ctx, performance.now());
+    sizePreviews();
     renderPreviews();
   })();
 })();
